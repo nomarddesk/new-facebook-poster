@@ -144,7 +144,8 @@ def deepseek_chat(system, user, temperature=1.3):
 #  OpenAI DALL-E 3 image  (used by the auto-queue)
 # --------------------------------------------------------------------------- #
 def generate_image_dalle(prompt):
-    """Returns (image_bytes, error)."""
+    """Returns (image_bytes, error). dall-e-3 returns a URL by default (response_format
+    is no longer accepted), so we download it; b64_json kept as a fallback."""
     if not OPENAI_API_KEY:
         return None, "OPENAI_API_KEY not set."
     try:
@@ -153,14 +154,20 @@ def generate_image_dalle(prompt):
             headers={"Authorization": f"Bearer {OPENAI_API_KEY}",
                      "Content-Type": "application/json"},
             json={"model": "dall-e-3", "prompt": prompt[:3900], "n": 1,
-                  "size": "1024x1024", "response_format": "b64_json"},
-            timeout=90,
+                  "size": "1024x1024"},
+            timeout=120,
         )
-        if r.status_code == 200:
-            b64 = r.json().get("data", [{}])[0].get("b64_json")
-            if b64:
-                return base64.b64decode(b64), None
-        return None, f"DALL-E {r.status_code}: {r.text[:200]}"
+        if r.status_code != 200:
+            return None, f"DALL-E {r.status_code}: {r.text[:200]}"
+        data = r.json().get("data", [{}])[0]
+        if data.get("b64_json"):
+            return base64.b64decode(data["b64_json"]), None
+        if data.get("url"):
+            img = requests.get(data["url"], timeout=60)
+            if img.status_code == 200:
+                return img.content, None
+            return None, f"image download failed: HTTP {img.status_code}"
+        return None, f"DALL-E returned no image: {r.text[:200]}"
     except Exception as e:
         return None, f"DALL-E error: {e}"
 
