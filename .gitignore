@@ -1,0 +1,11 @@
+# Never commit secrets / content data
+cookies.txt
+.env
+seen_posts.json
+queue.json
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
