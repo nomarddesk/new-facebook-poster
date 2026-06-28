@@ -153,7 +153,7 @@ def generate_image_dalle(prompt):
             "https://api.openai.com/v1/images/generations",
             headers={"Authorization": f"Bearer {OPENAI_API_KEY}",
                      "Content-Type": "application/json"},
-            json={"model": "dall-e-3", "prompt": prompt[:3900], "n": 1,
+                        json={"model": "gpt-image-1", "prompt": prompt[:3900], "n": 1,
                   "size": "1024x1024"},
             timeout=120,
         )
